@@ -1,4 +1,6 @@
-import telebot
+import os
+from flask import Flask
+from threading import Thread
 
 # Bot tokeningiz
 TOKEN = "8971695245:AAEKEq3VEuDiY_SHGyBijmEcSll_r-VXNxY"
@@ -124,3 +126,20 @@ def tugmalar_uchun(message):
 # Botni yurgizish
 print("Bot muvaffaqiyatli ishga tushdi...")
 bot.polling(none_stop=True)
+
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot serveri faol!"
+
+def run():
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port)
+
+def keep_alive():
+    t = Thread(target=run)
+    t.daemon = True
+    t.start()
+
+keep_alive()
