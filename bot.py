@@ -1,35 +1,35 @@
-import telebot
-from telebot import apihelper
+import os
 import time
-from flask import Flask, request
-
-# PythonAnywhere uchun proksi sozlamasi
-apihelper.proxy = {'https': 'http://proxy.server:3128'}
+from flask import Flask
+from threading import Thread
+import telebot
 
 TOKEN = "8971695245:AAEKEq3VEuDiY_SHGyBijmEcSll_r-VXNxY"
-ADMIN_ID = 8187441767  # Oyijoningizning Telegram ID-si
-WEBHOOK_URL = f"https://javohir00.pythonanywhere.com/{TOKEN}"
+ADMIN_ID = 8187441767  # Admin ID-si
 
 bot = telebot.TeleBot(TOKEN)
-app = Flask(__name__)
 
+# --- Render 24/7 ishlashi uchun Flask Server ---
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot muvaffaqiyatli ishlamoqda!", 200
+
+def run():
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port)
+
+def keep_alive():
+    t = Thread(target=run)
+    t.daemon = True
+    t.start()
+
+
+# --- LUG'ATLAR (Foydalanuvchi holatlarini saqlash uchun) ---
 user_steps = {}
 user_data = {}
 
-# Webhook so'rovlarini qabul qilish
-@app.route(f'/{TOKEN}', methods=['POST'])
-def webhook():
-    if request.headers.get('content-type') == 'application/json':
-        json_string = request.get_data().decode('utf-8')
-        update = telebot.types.Update.de_json(json_string)
-        bot.process_new_updates([update])
-        return 'OK', 200
-    return 'Forbidden', 403
-
-# Main sahifa
-@app.route('/')
-def index():
-    return "Bot muvaffaqiyatli ishlamoqda!", 200
 
 # 1. ASOSIY MENYU TUGMALARI
 def asosiy_menyu_yuborish(chat_id, matn):
@@ -42,6 +42,7 @@ def asosiy_menyu_yuborish(chat_id, matn):
     markup.add(btn3, btn4)
     bot.send_message(chat_id, matn, reply_markup=markup)
 
+
 # 2. START BUYRUG'I
 @bot.message_handler(commands=['start'])
 def start_message(message):
@@ -51,6 +52,7 @@ def start_message(message):
         message.chat.id, 
         f"Assalomu alaykum, {message.from_user.first_name}! Salon botimizga xush kelibsiz!"
     )
+
 
 # 3. KONTAKT (TELEFON RAQAM) QABUL QILISH BOSQICHI
 @bot.message_handler(content_types=['contact'])
@@ -77,6 +79,7 @@ def contact_handler(message):
             reply_markup=remove_markup
         )
 
+
 # 4. MATNLI XABARLARNI TUTISH
 @bot.message_handler(func=lambda message: True)
 def text_handler(message):
@@ -98,7 +101,7 @@ def text_handler(message):
             "Muvaffaqiyatli o'tdingiz! Tez orada operatorimiz bog'lanadi."
         )
 
-        # Oyijoningizga (Admin) xabar
+        # Adminga (Oyijoningizga) xabar yuborish
         admin_msg = (
             f"🔔 **Yangi qabulga yozilish!**\n\n"
             f"👤 **Mijoz:** {first_name}\n"
@@ -187,9 +190,10 @@ def text_handler(message):
         user_steps[chat_id] = None
         asosiy_menyu_yuborish(chat_id, "Iltimos, pastdagi bo'limlardan birini tanlang 👇")
 
-# Webhook ulanishi
-try:
+
+# --- BOTNI ISHGA TUSHIRISH ---
+if __name__ == '__main__':
+    print("Bot Render serverida muvaffaqiyatli ishga tushdi...")
+    keep_alive()
     bot.remove_webhook()
-    bot.set_webhook(url=WEBHOOK_URL)
-except Exception as e:
-    print("Webhook o'rnatishda xato:", e)
+    bot.polling(none_stop=True)
