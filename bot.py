@@ -191,9 +191,16 @@ def text_handler(message):
         asosiy_menyu_yuborish(chat_id, "Iltimos, pastdagi bo'limlardan birini tanlang 👇")
 
 
-# --- BOTNI ISHGA TUSHIRISH ---
+# --- ISHGA TUSHIRISH ---
 if __name__ == '__main__':
     print("Bot Render serverida muvaffaqiyatli ishga tushdi...")
+    
+    # Eski webhooklarni to'liq o'chirish
+    try:
+        bot.remove_webhook(drop_pending_updates=True)
+    except Exception as e:
+        print("Webhook o'chirishda xato:", e)
+
+    # Server va botni yurgizish
     keep_alive()
-    bot.remove_webhook()
-    bot.polling(none_stop=True)
+    bot.polling(none_stop=True, interval=0)
